@@ -10,20 +10,20 @@
 		"Other"
 	],
 	"activationEvents": [
-        "onCommand:plugin-react-to-vue.helloWorld"
+        "onCommand:plugin-react-to-vue.start"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "plugin-react-to-vue.helloWorld",
+				"command": "plugin-react-to-vue.start",
 				"title": "react-to-vue"
 			}
 		],
 		"menus": {
 			"explorer/context": [
 			  {
-				"command": "plugin-react-to-vue.helloWorld",
+				"command": "plugin-react-to-vue.start",
 				"group": "navigation",
 				"when": "resourceFilename =~ /.jsx|.tsx/" 
 			  }

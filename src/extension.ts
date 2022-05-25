@@ -15,18 +15,14 @@ export function activate(context: vscode.ExtensionContext) {
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('plugin-react-to-vue.helloWorld', (args) => {
+	let disposable = vscode.commands.registerCommand('plugin-react-to-vue.start', (args) => {
 		// The code you place here will be executed every time your command is executed
 		// Display a message box to the user
 		const selectPath = args.path;
-		console.log('%c [ selectPath ]-21', 'font-size:13px; background:pink; color:#bf2c9f;', selectPath);
 		const currentlyOpenTabFilePath = vscode.window.activeTextEditor?.document.fileName;
-		console.log('%c [ currentlyOpenTabfilePath ]-22', 'font-size:13px; background:pink; color:#bf2c9f;', currentlyOpenTabFilePath);
-		// const fileContent = fs.readFileSync(currentlyOpenTabFilePath!, 'utf8');
 		const targetFilePath = `${selectPath.split('.')[0]}.vue`;
-		// fs.writeFileSync(targetFilePath, targetFilePath);
 		genReact2VueCode(currentlyOpenTabFilePath!,targetFilePath);
-		vscode.window.showInformationMessage('Hello World from plugin-react-to-vue!');
+		vscode.window.showInformationMessage('transform form react to vue success!');
 	});
 
 	context.subscriptions.push(disposable);

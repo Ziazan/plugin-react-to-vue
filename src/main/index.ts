@@ -1,5 +1,4 @@
 import { parseCodeAst, generateR2SCode } from './vueCore/index';
-import * as vscode from 'vscode';
 import * as fs from 'fs';
 
 // const FILE_NAME = 'defaultDeclaraArrow','defaultArrow','CopySuccess','defaultFunction','defaultDeclaraFunction','defaultClass','defaultDeclaraClass'
@@ -29,8 +28,6 @@ export const genReact2VueCode = async (sourceFile:string, targetFile:string) => 
       sourceCode: sourceCode,
     });
      fs.writeFileSync(targetFile, targetContent);
-    //文件写入成功。
-    vscode.window.showInformationMessage('文件写入成功。');
   } catch (err) {
     console.error(err);
   }
