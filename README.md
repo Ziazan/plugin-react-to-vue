@@ -1,6 +1,6 @@
 # plugin-react-to-vue README
 
-This is the README for your extension "plugin-react-to-vue". After writing up a brief description, we recommend including the following sections.
+extension "plugin-react-to-vue"
 
 ## Features
 
