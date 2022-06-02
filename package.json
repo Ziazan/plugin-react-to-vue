@@ -2,7 +2,7 @@
   "name": "plugin-react-to-vue",
 	"displayName": "plugin-react-to-vue",
 	"description": "a plugin that converts react to vue",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"engines": {
 		"vscode": "^1.67.0"
 	},
