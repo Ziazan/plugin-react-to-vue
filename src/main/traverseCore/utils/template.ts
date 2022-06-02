@@ -359,7 +359,7 @@ export const getComponentTemplate = ({
   } else if (componentAst) {
     // console.log('%c  [ componentAst ]-37:', 'color: #0e93e0;background: #aaefe5;', generator(componentAst).code);
     // 要判断一下是不是函数
-    const { body, params } = componentAst as any;
+    let { body, params } = componentAst as any;
     const param = params ? params[0] : null;
 
     let templateAst: any;
@@ -419,7 +419,14 @@ export const getComponentTemplate = ({
         scriptAsts,
         blockInfo: {},
       });
+    }else if (t.isIfStatement(componentAst)) {
+      //TODO 需要处理if判断的多个return
+      console.log('if判断');
+      return '';
+    }else{
+      return '';
     }
-    return '';
   }
+  
+  return '';
 };

@@ -1,4 +1,4 @@
-import { getFunctionBody,genImportSpecifier,getComponentTemplate,transFnPropsToVueProps} from "./utils"
+import { getFunctionBody,genImportSpecifier,getComponentTemplate,transFnPropsToVueProps} from "./utils";
 import generator from '@babel/generator';
 import * as t from './helpers/ast';
 
@@ -12,45 +12,57 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
         scriptNode:[],
         template:'',
         componentName: funcType === 'arrow' ? path.parentPath.node.id.name : path.node.id.name
-    }
+    };
     //参数
     
     if(funcCom.componentName === root.exportName){
-        let paramsPath = path.get('params.0')
+        let paramsPath = path.get('params.0');
         //处理参数
         if(paramsPath){
             root.vueImportSpecifiers.push(genImportSpecifier('defineProps'));
             funcCom.scriptNode.push(transFnPropsToVueProps(path.node));
         }
-        let jsxPath = undefined;
+        let jsxPath = [];
+        const blockStatementBodyPath = path.get('body.body');
+        const blockStatementPath = path.get('body');
         path.traverse({
-            enter(path: t.NodePath<any>) {
-                if (
-                  t.isDefaultFunctionReturnStatement({
+            ReturnStatement(returnPath: t.NodePath<any>){
+                if(t.isDefaultFunctionReturnStatement({
                     // 调过组件函数本身的 return
                     functionAstNode: path.node,
-                    returnStatementPath: path,
-                  })
-                ) {
-                  jsxPath = path;
-                  path.stop();
-                }
-              },
-        })
+                    returnStatementPath: returnPath,
+                  })){
+                      const ifStatementPath = returnPath.findParent(p=>p.isIfStatement());
+                      if(ifStatementPath && ifStatementPath.isDescendant(blockStatementPath)){
+                          //判断当前 的if代码 是否是指定 functionPath 的后代
+                        jsxPath.push({...returnPath});
+                        ifStatementPath.remove();
+                        ifStatementPath.skip();
+                      }else{
+                        jsxPath.push({...returnPath});
+                        returnPath.remove();
+                        returnPath.skip();
+                      } 
+                  }
+            }
+        });
         // 处理script代码
-        jsxPath.parentPath.getAllPrevSiblings().forEach((scriptNodePath)=>{
-            funcCom.scriptNode.push(scriptNodePath.node)
-        })
+        blockStatementBodyPath?.forEach((scriptNodePath)=>{
+            funcCom.scriptNode.push(scriptNodePath.node);
+        });
 
-        if (jsxPath) {
-            funcCom.template += getComponentTemplate({
-              componentAst: jsxPath.node!,
-              scriptAsts: funcCom.scriptNode,
-              withJSXVariableDeclarations: [],
-              withJSXFunctionDeclarations: [],
+        if (jsxPath.length) {
+            console.log('%c  jsxPath.length:', 'color: #0e93e0;background: #aaefe5;', jsxPath.length);
+            jsxPath.forEach((path)=>{
+                funcCom.template += getComponentTemplate({
+                    componentAst: path.node!,
+                    scriptAsts: funcCom.scriptNode,
+                    withJSXVariableDeclarations: [],
+                    withJSXFunctionDeclarations: [],
+                  });
             });
         }
-        root.functional.push(funcCom)
+        root.functional.push(funcCom);
     }else{
          //TODO 如果有jsx 就生成新文件
         // else 原样保留 输出script
@@ -64,12 +76,12 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
             // 箭头函数的定义
             const pPath = path.findParent((n)=>{
                 return n.isVariableDeclaration();
-            })
-            funcCom.scriptNode.push(pPath.node)
+            });
+            funcCom.scriptNode.push(pPath.node);
         }else{
-            funcCom.scriptNode.push(path.node)
+            funcCom.scriptNode.push(path.node);
         }
-        root.functional.push(funcCom)
+        root.functional.push(funcCom);
        
     }
-}
+};

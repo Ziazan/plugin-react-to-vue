@@ -51,7 +51,7 @@ export function generateR2SCode({ sourceAst, sourceCode }: generateR2SCodeParams
       }
       //css 跳过
       if(/.*?\.less/.test(node.source.value)){
-        return
+        return;
       }
       result.import.push(fileContent.slice(node.start, node.end));
     },
@@ -73,10 +73,13 @@ export function generateR2SCode({ sourceAst, sourceCode }: generateR2SCodeParams
       }
     },
     ArrowFunctionExpression(path: t.NodePath<t.ArrowFunctionExpression>) {
-      let variablePath = path.findParent((p) => p.isVariableDeclaration());
-      if (!variablePath || variablePath.parentPath.type !== 'Program') {
+      let variablePath = path.findParent((p) => {
+        return p.isVariableDeclaration();
+      });
+      if (!variablePath || variablePath.parentPath.type !== 'Program'  || path.getPathLocation().split('.').length > 4 ) {
+        //program.body[2].declarations[0].init
         path.skip();
-      }else{
+      } else {
         traverseFunctional(path, fileContent, result, 'arrow');
       }
     },

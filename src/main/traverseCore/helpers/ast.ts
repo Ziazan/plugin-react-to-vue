@@ -88,19 +88,16 @@ function isDefaultFunctionReturnStatement({
   if (t.isReturnStatement(returnStatementPath.node)) {
     // console.log('%c  returnStatementPath.node:', 'color: #0e93e0;background: #aaefe5;', generator(returnStatementPath.node).code);
     const { start: functionStart, end: functionEnd } = functionAstNode;
-    console.log('%c   functionStart,functionEnd:', 'color: #0e93e0;background: #aaefe5;', functionStart, functionEnd);
     let returnStatementBelongToFunctionStart = -1;
     let returnStatementBelongToFunctionEnd = -2;
     const returnParentPath = returnStatementPath.getFunctionParent();
     // console.log('%c  returnParentPath:', 'color: #0e93e0;background: #aaefe5;', generator(returnParentPath.node).code);
     if (returnParentPath?.node && t.isArrowFunctionExpression(returnParentPath.node)) {
       const { start, end } = returnParentPath.node;
-      console.log('%c  isArrowFunctionExpression start, end:', 'color: #0e93e0;background: #aaefe5;', start, end);
       returnStatementBelongToFunctionStart = start;
       returnStatementBelongToFunctionEnd = end;
     } else {
       const { start, end } = get(returnStatementPath, 'parentPath.parentPath.node');
-      console.log('%c  start, end :', 'color: #0e93e0;background: #aaefe5;', start, end);
       returnStatementBelongToFunctionStart = start;
       returnStatementBelongToFunctionEnd = end;
     }
@@ -111,13 +108,6 @@ function isDefaultFunctionReturnStatement({
     // 直接导出jsx
     const { start: functionStart, end: functionEnd } = functionAstNode;
     const { start, end } = returnStatementPath.node;
-    console.log(
-      '%c isJSXElement functionStart, functionStart :',
-      'color: #0e93e0;background: #aaefe5;',
-      functionStart,
-      functionEnd
-    );
-    console.log('%c isJSXElement  start, end :', 'color: #0e93e0;background: #aaefe5;', start, end);
     if (functionStart === start && functionEnd === end) {
       return true;
     }
@@ -160,7 +150,7 @@ function hasJSX(node: any): boolean | t.Node {
  * @returns
  */
 const isClassMemberStateExpression = (expressionStatement: t.Node): boolean => {
-  if (!t.isExpressionStatement(expressionStatement)) return false;
+  if (!t.isExpressionStatement(expressionStatement)) {return false;}
   const name = get(expressionStatement, 'expression.left.property.name');
   return name === 'state';
 };
@@ -194,17 +184,17 @@ const isThisSetSate = (node: t.Node) => {
  * @returns 
  */
  function isVariableFunc (path:NodePath<any>) {
-  let result = false
+  let result = false;
   path.traverse({
     ArrowFunctionExpression(){
-      result = true
-      path.stop()
+      result = true;
+      path.stop();
     },
     FunctionDeclaration(){
 
     }
-  })
-  return result
+  });
+  return result;
 }
 
 export * from '@babel/types';

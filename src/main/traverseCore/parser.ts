@@ -1,4 +1,5 @@
 import * as babelParser from '@babel/parser';
+import transformTS from './ts';
 
 const defaultOptions: babelParser.ParserOptions = {
   sourceType: 'module',
@@ -39,6 +40,10 @@ export function parseCodeAst(
     ...defaultOptions,
     ...userOptions,
   };
+  let ast = babelParser.parse(code, options);
+  // if (true) {
+  //   ast = transformTS(ast);
+  // }
 
-  return babelParser.parse(code, options);
+  return ast;
 }

@@ -5,10 +5,10 @@ import * as fs from 'fs';
 // const FILE_NAME = 'defaultArrow';
 const FILE_LIST = [
   // 'CopySuccess',
-  // 'defaultDeclaraArrow',
-  // 'defaultArrow',
+//   'defaultDeclaraArrow',
+//   'defaultArrow',
   // 'defaultFunction',
-  // 'defaultDeclaraFunction',
+//   'defaultDeclaraFunction',
 //   'defaultClass',
   // 'classLifeCircle',
   // 'defaultDeclaraClass',
