@@ -1,5 +1,6 @@
-import { getFunctionBody,genImportSpecifier,getComponentTemplate,transFnPropsToVueProps} from "./utils";
+import { getFunctionBody,genImportSpecifier,getComponentTemplate,transFnPropsToVueProps,genFunctionCallExpression} from "./utils";
 import generator from '@babel/generator';
+import get from 'lodash/get';
 import * as t from './helpers/ast';
 
 
@@ -13,6 +14,8 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
         template:'',
         componentName: funcType === 'arrow' ? path.parentPath.node.id.name : path.node.id.name
     };
+
+    let watchEffectFlag = false;
     //参数
     
     if(funcCom.componentName === root.exportName){
@@ -46,10 +49,27 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
                   }
             }
         });
+        
         // 处理script代码
         blockStatementBodyPath?.forEach((scriptNodePath)=>{
+            // 处理react 关键函数
+            scriptNodePath.traverse({
+                CallExpression(path:t.NodePath<t.CallExpression>){
+                    if(get(path.node,'callee.name') !== 'useEffect'){
+                        path.skip();
+                    }else{
+                        watchEffectFlag = true;
+                        const args1 = get(path.node,'arguments[0]');
+                        const node = genFunctionCallExpression('watchEffect', [args1]);
+                        path.replaceWith(node);
+                    }
+                }
+            });
             funcCom.scriptNode.push(scriptNodePath.node);
         });
+        // 追加useEffect 引入
+        watchEffectFlag && root.vueImportSpecifiers.push(genImportSpecifier('watchEffect'));
+        
 
         if (jsxPath.length) {
             console.log('%c  jsxPath.length:', 'color: #0e93e0;background: #aaefe5;', jsxPath.length);

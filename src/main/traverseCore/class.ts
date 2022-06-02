@@ -83,14 +83,14 @@ function transformThisAssignMent(path: t.NodePath<any>,root) {
     AssignmentExpression(assPath:t.NodePath<t.AssignmentExpression>){
       const leftPath = assPath.get('left');
       const rightPath = assPath.get('right');
-      const {start:lStart,end:lEnd} = get(leftPath.node,'property') || {}
-      const leftType = get(leftPath.node,'object.type')
+      const {start:lStart,end:lEnd} = get(leftPath.node,'property') || {};
+      const leftType = get(leftPath.node,'object.type');
       if (leftType === 'ThisExpression' && lStart) {
         // 替换this
         transformStateThisValue(rightPath);
         // TODO
-        const name = root.source.slice(lStart, lEnd)
-        const variableNode = genVariableDeclaration(name,generator(rightPath.node).code)
+        const name = root.source.slice(lStart, lEnd);
+        const variableNode = genVariableDeclaration(name,generator(rightPath.node).code);
         assPath.parentPath.replaceWith(variableNode as t.Node);
       }
     },
@@ -109,6 +109,7 @@ export const classMethodToVueFnExpStatement = (bodyStatementAst: t.Node) => {
 
   return t.expressionStatement(expression);
 };
+
 
 
 /**
@@ -195,8 +196,8 @@ function parseRender(path, fileContent, resultClass,root) {
     });
     // 处理script代码
     jsxPath.parentPath.getAllPrevSiblings().forEach((scriptNodePath)=>{
-      resultClass.scriptNode.push(scriptNodePath.node)
-    })
+      resultClass.scriptNode.push(scriptNodePath.node);
+    });
   }
 }
 

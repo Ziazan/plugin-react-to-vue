@@ -93,3 +93,10 @@ export const genImportImportDeclaration = (specifiers: any[], sourceStr: string)
     expression,
   });
 };
+
+export const genFunctionCallExpression = (name,fnArgument) => {
+  const callee = t.identifier(name);
+  const expression = t.callExpression(callee, fnArgument);
+
+  return expression;
+};
