@@ -5,4 +5,4 @@ node_modules
 *.vsix
 **/demo/**
 yarn-error.log
-.DS_Store
+*.DS_Store

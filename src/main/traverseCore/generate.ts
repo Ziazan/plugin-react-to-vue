@@ -45,22 +45,10 @@ export const generateVueComponent = (result: ResultType): string => {
 
   
 
-  // reactive 正则替换
-  //TODO 收集useState 合并成一个 state
-  let reactiveFlag = false;
-  script = script.replace(/const\s?\[(.*?),\s?.*?\]\s?=\s?useState(.*)/g, (match,p1,p2)=>{
-    // console.log(match,p1,p2,p3);
-    reactiveFlag = true;
-    return `const ${p1} = reactive${p2}`;
-  });
   // 替换setxx 转换位赋值 state.xxx = xxx
   script = script.replace(/set(.*?)\((.*?)\)/g,  (match,p1,p2)=>{
     return `state.${p1.toString().toLowerCase()}= ${p2}`;
   });
-
-  if(reactiveFlag){
-    result.vueImportSpecifiers.push(genImportSpecifier('reactive'));
-  }
 
   // vue 引入
   const vueImport = genImportImportDeclaration(result.vueImportSpecifiers, 'vue');
