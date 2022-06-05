@@ -17,7 +17,7 @@ export const genReactive = (
   ): t.Node => {
     const callee = t.identifier(calleeName);
     const properties = propertyArr.reduce((preArr,[keyNode,valueNode])=>{
-         preArr.push(t.objectProperty(keyNode,valueNode));
+         preArr.push(t.objectProperty(keyNode,valueNode || t.identifier('undefined')));
          return preArr;
     },[]);
     const callExpressionArguments = [t.objectExpression([...properties])];
@@ -118,7 +118,9 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
                     const name = get(callPath.node,'callee.name');
                     if(name === 'useState'){
                         useStateFlag = true;
-                        stateIndex = index;
+                        if(!~stateIndex){
+                            stateIndex = index;
+                        }
                         const pPath = callPath.findParent((p)=>p.isVariableDeclarator());
                         const elementKeyNode = get(pPath.node,'id.elements[0]');
                         const elementSetNode = get(pPath.node,'id.elements[1]') || undefined;
