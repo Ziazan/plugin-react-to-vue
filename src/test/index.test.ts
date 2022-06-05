@@ -9,7 +9,7 @@ const FILE_LIST = [
 //   'defaultArrow',
   // 'defaultFunction',
 //   'defaultDeclaraFunction',
-//   'defaultClass',
+  'defaultClass',
   // 'classLifeCircle',
   // 'defaultDeclaraClass',
   // 'defaultJsx',
@@ -21,7 +21,7 @@ const FILE_LIST = [
   // 'multipleReturn',
   // 'test',
   // 'useRef',
-  'setState'
+  // 'setState'
 ];
 
 const genReact2VueCode = async (sourceFile, targetFile) => {

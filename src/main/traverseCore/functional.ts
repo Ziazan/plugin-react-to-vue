@@ -27,6 +27,21 @@ export const genReactive = (
     return t.variableDeclaration('const', [variableDeclarator]);
   };
 
+/**
+ * 生成函数
+ * @param calleeName 
+ * @param callArguments 
+ * @returns 
+ */
+export const genCallExpression = (
+    calleeName:string,
+    callArguments:t.Expression[]
+):t.CallExpression =>{
+    const callee = t.identifier(calleeName);
+    const callExpression = t.callExpression(callee, callArguments);
+    return callExpression;
+};
+
 
 export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>{
     // TODO
@@ -46,13 +61,16 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
         let paramsPath = path.get('params.0');
         //处理参数
         if(paramsPath){
+            root.vueImportSpecifiers.push(genImportSpecifier('defineProps'));
+            //转换 const props = defineProps({})
             funcCom.scriptNode.push(transFnPropsToVueProps(path.node));
+            funcCom.reactivity['defineProps'] = paramsPath.node.name;
         }
         let jsxPath = [];
         const blockStatementBodyPath = path.get('body.body');
         const blockStatementPath = path.get('body');
         path.traverse({
-            ReturnStatement(returnPath: t.NodePath<any>){
+            ReturnStatement(returnPath: t.NodePath<t.ReturnStatement>){
                 if(t.isDefaultFunctionReturnStatement({
                     // 调过组件函数本身的 return
                     functionAstNode: path.node,
@@ -71,6 +89,19 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
                       } 
                   }
             },
+            VariableDeclarator(varPath:t.NodePath<t.VariableDeclarator>){
+                const name = get(varPath.node,'init.name');
+                if(name === 'props'){
+                    const initPath = varPath.get('init');
+                    const {start:bStart,end:bEnd} = blockStatementPath.node;
+                    const {start:vPStart,end:vPEnd} = varPath.parentPath.parentPath.node;
+                    if(bStart === vPStart && bEnd === vPEnd){
+                        const toRefsCallNode = genCallExpression('toRefs',[initPath.node]);
+                        root.vueImportSpecifiers.push(genImportSpecifier('toRefs'));
+                        initPath.replaceWith(toRefsCallNode);
+                    }
+                }
+            }
         });
 
         // 处理script代码

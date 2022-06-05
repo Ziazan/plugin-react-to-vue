@@ -37,6 +37,7 @@ export const generateVueComponent = (result: ResultType): string => {
       //TODO 创建新文件
     }else{
       functionNode.scriptNode?.forEach((scriptNode)=>{
+        
         const strScriptNodeCode = generator(scriptNode).code + '\n';
         script += strScriptNodeCode;
         // 替换xxRef.current => xxRef.value
@@ -51,7 +52,11 @@ export const generateVueComponent = (result: ResultType): string => {
           const refReg = new RegExp(`(${setterName})\(((.|\n)+?)\)`,'g');
           // 替换setxx 转换位赋值 state.xxx = xxx
           script = script.replace(refReg,  (match,p1,p2)=>{
-            return `state.${setterName.toLowerCase()}= ${p2}`;
+            return `state.${setterName.slice(3,4).toLowerCase() + setterName.slice(4)}= ${p2}`;
+          });
+          // 目标中setxx 替换
+          functionNode.template = functionNode.template.replace(refReg,  (match,p1,p2)=>{
+            return `state.${setterName.slice(3,4).toLowerCase() + setterName.slice(4)}= ${p2}`;
           });
         });
       });
@@ -78,5 +83,10 @@ export const generateVueComponent = (result: ResultType): string => {
     singleQuote: true,
     jsxSingleQuote: false,
     vueIndentScriptAndStyle: true,
+    htmlWhitespaceSensitivity:'css',
+    endOfLine: "auto",
+    rangeStart:0,
+    rangeEnd:Infinity,
+
   });
 };
