@@ -37,30 +37,32 @@ export const generateVueComponent = (result: ResultType): string => {
       //TODO 创建新文件
     }else{
       functionNode.scriptNode?.forEach((scriptNode)=>{
-        script += generator(scriptNode).code + '\n';
+        
+        const strScriptNodeCode = generator(scriptNode).code + '\n';
+        script += strScriptNodeCode;
+        // 替换xxRef.current => xxRef.value
+        functionNode.reactivity?.ref?.forEach(name =>{
+          const refReg = new RegExp(`${name}\.current`,'g');
+          script = script.replace(refReg,  `${name}.value`);
+        });
+
+        //reactive
+        functionNode.reactivity?.reactive?.forEach(([name,setterName]) =>{
+          if(!setterName?.length) {return;}
+          const refReg = new RegExp(`(${setterName})\(((.|\n)+?)\)`,'g');
+          // 替换setxx 转换位赋值 state.xxx = xxx
+          script = script.replace(refReg,  (match,p1,p2)=>{
+            return `state.${setterName.slice(3,4).toLowerCase() + setterName.slice(4)}= ${p2}`;
+          });
+          // 目标中setxx 替换
+          functionNode.template = functionNode.template.replace(refReg,  (match,p1,p2)=>{
+            return `state.${setterName.slice(3,4).toLowerCase() + setterName.slice(4)}= ${p2}`;
+          });
+        });
       });
       template += functionNode.template;
     }
   });
-
-  
-
-  // reactive 正则替换
-  //TODO 收集useState 合并成一个 state
-  let reactiveFlag = false;
-  script = script.replace(/const\s?\[(.*?),\s?.*?\]\s?=\s?useState(.*)/g, (match,p1,p2)=>{
-    // console.log(match,p1,p2,p3);
-    reactiveFlag = true;
-    return `const ${p1} = reactive${p2}`;
-  });
-  // 替换setxx 转换位赋值 state.xxx = xxx
-  script = script.replace(/set(.*?)\((.*?)\)/g,  (match,p1,p2)=>{
-    return `state.${p1.toString().toLowerCase()}= ${p2}`;
-  });
-
-  if(reactiveFlag){
-    result.vueImportSpecifiers.push(genImportSpecifier('reactive'));
-  }
 
   // vue 引入
   const vueImport = genImportImportDeclaration(result.vueImportSpecifiers, 'vue');
@@ -81,5 +83,10 @@ export const generateVueComponent = (result: ResultType): string => {
     singleQuote: true,
     jsxSingleQuote: false,
     vueIndentScriptAndStyle: true,
+    htmlWhitespaceSensitivity:'css',
+    endOfLine: "auto",
+    rangeStart:0,
+    rangeEnd:Infinity,
+
   });
 };

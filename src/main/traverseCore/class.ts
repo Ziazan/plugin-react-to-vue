@@ -138,7 +138,9 @@ export const classMethodToVueFnExpStatement = (bodyStatementAst: t.Node) => {
   updateReactiveByConstructor(path.node);
   // props
   let paramName = path.get('params.0') ? path.get('params.0').node.name : null;
-  paramName && root.vueImportSpecifiers.push(genImportSpecifier('defineProps'));
+  if(paramName){
+    root.vueImportSpecifiers.push(genImportSpecifier('defineProps'));
+  }
   resultClass.constructor = generator(transFnPropsToVueProps(path.node)).code + '\n';
 
   // 处理this.xx = 

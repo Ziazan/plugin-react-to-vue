@@ -3,6 +3,45 @@ import generator from '@babel/generator';
 import get from 'lodash/get';
 import * as t from './helpers/ast';
 
+/**
+ * 
+ * @param stateArr 
+ * @param idName 
+ * @param calleeName 
+ * @returns 
+ */
+export const genReactive = (
+    idName: string,
+    calleeName: string,
+    propertyArr: Array<[t.Identifier,t.Identifier]>,
+  ): t.Node => {
+    const callee = t.identifier(calleeName);
+    const properties = propertyArr.reduce((preArr,[keyNode,valueNode])=>{
+         preArr.push(t.objectProperty(keyNode,valueNode || t.identifier('undefined')));
+         return preArr;
+    },[]);
+    const callExpressionArguments = [t.objectExpression([...properties])];
+    const callExpression = t.callExpression(callee, callExpressionArguments);
+    const id = t.identifier(idName);
+    const variableDeclarator = t.variableDeclarator(id, callExpression);
+    return t.variableDeclaration('const', [variableDeclarator]);
+  };
+
+/**
+ * 生成函数
+ * @param calleeName 
+ * @param callArguments 
+ * @returns 
+ */
+export const genCallExpression = (
+    calleeName:string,
+    callArguments:t.Expression[]
+):t.CallExpression =>{
+    const callee = t.identifier(calleeName);
+    const callExpression = t.callExpression(callee, callArguments);
+    return callExpression;
+};
+
 
 export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>{
     // TODO
@@ -12,10 +51,10 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
         isJsxFunction:false,
         scriptNode:[],
         template:'',
-        componentName: funcType === 'arrow' ? path.parentPath.node.id.name : path.node.id.name
+        componentName: funcType === 'arrow' ? path.parentPath.node.id.name : path.node.id.name,
+        reactivity:{},
     };
 
-    let watchEffectFlag = false;
     //参数
     
     if(funcCom.componentName === root.exportName){
@@ -23,13 +62,15 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
         //处理参数
         if(paramsPath){
             root.vueImportSpecifiers.push(genImportSpecifier('defineProps'));
+            //转换 const props = defineProps({})
             funcCom.scriptNode.push(transFnPropsToVueProps(path.node));
+            funcCom.reactivity['defineProps'] = paramsPath.node.name;
         }
         let jsxPath = [];
         const blockStatementBodyPath = path.get('body.body');
         const blockStatementPath = path.get('body');
         path.traverse({
-            ReturnStatement(returnPath: t.NodePath<any>){
+            ReturnStatement(returnPath: t.NodePath<t.ReturnStatement>){
                 if(t.isDefaultFunctionReturnStatement({
                     // 调过组件函数本身的 return
                     functionAstNode: path.node,
@@ -47,29 +88,80 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
                         returnPath.skip();
                       } 
                   }
+            },
+            VariableDeclarator(varPath:t.NodePath<t.VariableDeclarator>){
+                const name = get(varPath.node,'init.name');
+                if(name === 'props'){
+                    const initPath = varPath.get('init');
+                    const {start:bStart,end:bEnd} = blockStatementPath.node;
+                    const {start:vPStart,end:vPEnd} = varPath.parentPath.parentPath.node;
+                    if(bStart === vPStart && bEnd === vPEnd){
+                        const toRefsCallNode = genCallExpression('toRefs',[initPath.node]);
+                        root.vueImportSpecifiers.push(genImportSpecifier('toRefs'));
+                        initPath.replaceWith(toRefsCallNode);
+                    }
+                }
             }
         });
-        
+
         // 处理script代码
-        blockStatementBodyPath?.forEach((scriptNodePath)=>{
-            // 处理react 关键函数
+        let stateIndex = -1; // 记住下标
+        const useStateProperties = [];
+        let watchEffectFlag = false;
+        let refVars = []; // 收集uesRef的变量声明
+        let useStateVarsAndSetter:Array<[string,string]> = []; // 收集useState的变量声明
+        blockStatementBodyPath?.forEach((scriptNodePath,index)=>{
+            let useStateFlag = false;
+            // 处理useState
             scriptNodePath.traverse({
-                CallExpression(path:t.NodePath<t.CallExpression>){
-                    if(get(path.node,'callee.name') !== 'useEffect'){
-                        path.skip();
-                    }else{
+                CallExpression(callPath:t.NodePath<any>){
+                    const name = get(callPath.node,'callee.name');
+                    if(name === 'useState'){
+                        useStateFlag = true;
+                        if(!~stateIndex){
+                            stateIndex = index;
+                        }
+                        const pPath = callPath.findParent((p)=>p.isVariableDeclarator());
+                        const elementKeyNode = get(pPath.node,'id.elements[0]');
+                        const elementSetNode = get(pPath.node,'id.elements[1]') || undefined;
+                        const argumentsValueNode = get(callPath.node,'arguments[0]') || undefined;
+                        elementKeyNode && useStateProperties.push([elementKeyNode,argumentsValueNode]);
+                        useStateVarsAndSetter.push([elementKeyNode.name,elementSetNode?.name ?? '']);
+                        pPath.remove();
+                    }else if(name === 'useEffect'){
                         watchEffectFlag = true;
-                        const args1 = get(path.node,'arguments[0]');
+                        const args1 = get(callPath.node,'arguments[0]');
                         const node = genFunctionCallExpression('watchEffect', [args1]);
-                        path.replaceWith(node);
+                        callPath.replaceWith(node);
+                    }else if(name === 'useRef'){
+                        //useRef  => ref
+                        callPath.node.callee.name = 'ref';
+                        // 收集ref的变量 ref.current => ref.value
+                        const pPath = callPath.findParent((p)=>p.isVariableDeclarator());
+                        const refVarName = get(pPath.node,'id.name');
+                        refVars.push(refVarName);
+                    }else{
+                        callPath.skip();
                     }
                 }
             });
-            funcCom.scriptNode.push(scriptNodePath.node);
+
+            !useStateFlag && funcCom.scriptNode.push(scriptNodePath.node);
         });
+        // useState => const state = reactive({})
+        if(useStateVarsAndSetter?.length){
+            root.vueImportSpecifiers.push(genImportSpecifier('reactive'));
+            funcCom.scriptNode.splice(stateIndex,0,genReactive('state','reactive',useStateProperties));
+            funcCom.reactivity['reactive'] = useStateVarsAndSetter;
+        }
         // 追加useEffect 引入
         watchEffectFlag && root.vueImportSpecifiers.push(genImportSpecifier('watchEffect'));
         
+        // 追加ref 引入
+        if(refVars?.length){
+            root.vueImportSpecifiers.push(genImportSpecifier('ref'));
+            funcCom.reactivity['ref'] = refVars;
+        };
 
         if (jsxPath.length) {
             console.log('%c  jsxPath.length:', 'color: #0e93e0;background: #aaefe5;', jsxPath.length);

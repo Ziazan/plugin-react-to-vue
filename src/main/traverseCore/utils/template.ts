@@ -81,17 +81,19 @@ export const transformVueTemplate = ({
       const stringValue = generator(value, { compact: true }).code;
       if (name === 'className') {
         //className => class
-        // 替换一下styles.xxx TODO 放在模版代码中replace 还是在这里处理？
+        // 替换一下styles.xxx
         if (t.isJSXExpressionContainer(value)) {
           let valueExpression = get(value, 'expression');
-          const stringLiteral = generator(valueExpression).code;
-          const expressionArr = stringLiteral.split('.');
-          const hasStyles = expressionArr?.[0] === 'styles';
-          if (hasStyles) {
-            expressionArr.shift();
-            attrItemString += `class="${expressionArr.join('.')}"`;
-          } else {
-            attrItemString += `:class="${tools.changeMemberExpressionByName('')}"`;
+          let stringLiteral = generator(valueExpression).code;
+          //`${styles.box} text-ellipsis` => box text-ellipsis
+          //`${styles.item} ${props?.isInline ? styles.inline : ''}` => `item ${props?.isInline ? 'inline' : ''}`
+          stringLiteral = stringLiteral.replace(/\$\{styles\.(\S+)\}/,'$1');
+          if(stringLiteral.includes('$')){
+            stringLiteral = stringLiteral.replace(/styles\.(\S+)/,"'$1'");
+            attrItemString += `:class="${stringLiteral}"`;
+          }else{
+            stringLiteral = stringLiteral.replace(/styles\.(\S+)/,"$1");
+            attrItemString += `class="${stringLiteral.replace('`','')}"`;
           }
         } else {
           attrItemString += `class=${stringValue}`;
