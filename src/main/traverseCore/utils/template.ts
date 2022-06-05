@@ -88,10 +88,11 @@ export const transformVueTemplate = ({
           //`${styles.box} text-ellipsis` => box text-ellipsis
           //`${styles.item} ${props?.isInline ? styles.inline : ''}` => `item ${props?.isInline ? 'inline' : ''}`
           stringLiteral = stringLiteral.replace(/\$\{styles\.(\S+)\}/,'$1');
-          stringLiteral = stringLiteral.replace(/styles\.(\S+)/,"'$1'");
           if(stringLiteral.includes('$')){
+            stringLiteral = stringLiteral.replace(/styles\.(\S+)/,"'$1'");
             attrItemString += `:class="${stringLiteral}"`;
           }else{
+            stringLiteral = stringLiteral.replace(/styles\.(\S+)/,"$1");
             attrItemString += `class="${stringLiteral.replace('`','')}"`;
           }
         } else {
