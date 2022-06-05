@@ -38,12 +38,15 @@ export const generateVueComponent = (result: ResultType): string => {
     }else{
       functionNode.scriptNode?.forEach((scriptNode)=>{
         script += generator(scriptNode).code + '\n';
+        // 替换xxRef.current => xxRef.value
+        functionNode.reactivity?.ref?.forEach(name =>{
+          const refReg = new RegExp(`${name}\.current`,'g');
+          script = script.replace(refReg,  `${name}.value`);
+        });
       });
       template += functionNode.template;
     }
   });
-
-  
 
   // 替换setxx 转换位赋值 state.xxx = xxx
   script = script.replace(/set(.*?)\((.*?)\)/g,  (match,p1,p2)=>{

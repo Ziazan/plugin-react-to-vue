@@ -36,10 +36,10 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
         isJsxFunction:false,
         scriptNode:[],
         template:'',
-        componentName: funcType === 'arrow' ? path.parentPath.node.id.name : path.node.id.name
+        componentName: funcType === 'arrow' ? path.parentPath.node.id.name : path.node.id.name,
+        reactivity:{},
     };
 
-    let watchEffectFlag = false;
     //参数
     
     if(funcCom.componentName === root.exportName){
@@ -76,12 +76,15 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
         // 处理script代码
         let stateIndex = -1; // 记住下标
         const useStateProperties = [];
+        let watchEffectFlag = false;
+        let refVars = []; // 收集ref的变量声明
         blockStatementBodyPath?.forEach((scriptNodePath,index)=>{
             let useStateFlag = false;
-            // 处理react 关键函数
+            // 处理useState
             scriptNodePath.traverse({
                 CallExpression(callPath:t.NodePath<any>){
-                    if(callPath.node.callee.name === 'useState'){
+                    const name = get(callPath.node,'callee.name');
+                    if(name === 'useState'){
                         useStateFlag = true;
                         stateIndex = index;
                         const pPath = callPath.findParent((p)=>p.isVariableDeclarator());
@@ -89,19 +92,20 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
                         const elementValueNode = get(callPath.node,'arguments[0]') || undefined;
                         elementKeyNode && useStateProperties.push([elementKeyNode,elementValueNode]);
                         pPath.remove();
-                    }
-                }
-            });
-            // 处理react 关键函数
-            scriptNodePath.traverse({
-                CallExpression(path:t.NodePath<t.CallExpression>){
-                    if(get(path.node,'callee.name') !== 'useEffect'){
-                        path.skip();
-                    }else{
+                    }else if(name === 'useEffect'){
                         watchEffectFlag = true;
-                        const args1 = get(path.node,'arguments[0]');
+                        const args1 = get(callPath.node,'arguments[0]');
                         const node = genFunctionCallExpression('watchEffect', [args1]);
-                        path.replaceWith(node);
+                        callPath.replaceWith(node);
+                    }else if(name === 'useRef'){
+                        //useRef  => ref
+                        callPath.node.callee.name = 'ref';
+                        // 收集ref的变量 ref.current => ref.value
+                        const pPath = callPath.findParent((p)=>p.isVariableDeclarator());
+                        const refVarName = get(pPath.node,'id.name');
+                        refVars.push(refVarName);
+                    }else{
+                        callPath.skip();
                     }
                 }
             });
@@ -116,6 +120,11 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
         // 追加useEffect 引入
         watchEffectFlag && root.vueImportSpecifiers.push(genImportSpecifier('watchEffect'));
         
+        // 追加ref 引入
+        if(refVars?.length){
+            root.vueImportSpecifiers.push(genImportSpecifier('ref'));
+            funcCom.reactivity['ref'] = refVars;
+        };
 
         if (jsxPath.length) {
             console.log('%c  jsxPath.length:', 'color: #0e93e0;background: #aaefe5;', jsxPath.length);

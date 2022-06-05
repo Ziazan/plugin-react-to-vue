@@ -19,7 +19,8 @@ const FILE_LIST = [
   // 'reactHook',
   // 'channel-manager-card',
   // 'multipleReturn',
-  'test'
+  // 'test'
+  'useRef'
 ];
 
 const genReact2VueCode = async (sourceFile, targetFile) => {
