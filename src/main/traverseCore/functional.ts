@@ -77,7 +77,8 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
         let stateIndex = -1; // 记住下标
         const useStateProperties = [];
         let watchEffectFlag = false;
-        let refVars = []; // 收集ref的变量声明
+        let refVars = []; // 收集uesRef的变量声明
+        let useStateVarsAndSetter:Array<[string,string]> = []; // 收集useState的变量声明
         blockStatementBodyPath?.forEach((scriptNodePath,index)=>{
             let useStateFlag = false;
             // 处理useState
@@ -89,8 +90,10 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
                         stateIndex = index;
                         const pPath = callPath.findParent((p)=>p.isVariableDeclarator());
                         const elementKeyNode = get(pPath.node,'id.elements[0]');
-                        const elementValueNode = get(callPath.node,'arguments[0]') || undefined;
-                        elementKeyNode && useStateProperties.push([elementKeyNode,elementValueNode]);
+                        const elementSetNode = get(pPath.node,'id.elements[1]') || undefined;
+                        const argumentsValueNode = get(callPath.node,'arguments[0]') || undefined;
+                        elementKeyNode && useStateProperties.push([elementKeyNode,argumentsValueNode]);
+                        useStateVarsAndSetter.push([elementKeyNode.name,elementSetNode?.name ?? '']);
                         pPath.remove();
                     }else if(name === 'useEffect'){
                         watchEffectFlag = true;
@@ -113,9 +116,10 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
             !useStateFlag && funcCom.scriptNode.push(scriptNodePath.node);
         });
         // useState => const state = reactive({})
-        if(~stateIndex){
+        if(useStateVarsAndSetter?.length){
             root.vueImportSpecifiers.push(genImportSpecifier('reactive'));
             funcCom.scriptNode.splice(stateIndex,0,genReactive('state','reactive',useStateProperties));
+            funcCom.reactivity['reactive'] = useStateVarsAndSetter;
         }
         // 追加useEffect 引入
         watchEffectFlag && root.vueImportSpecifiers.push(genImportSpecifier('watchEffect'));

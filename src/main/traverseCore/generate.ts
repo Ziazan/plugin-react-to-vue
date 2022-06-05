@@ -37,20 +37,26 @@ export const generateVueComponent = (result: ResultType): string => {
       //TODO 创建新文件
     }else{
       functionNode.scriptNode?.forEach((scriptNode)=>{
-        script += generator(scriptNode).code + '\n';
+        const strScriptNodeCode = generator(scriptNode).code + '\n';
+        script += strScriptNodeCode;
         // 替换xxRef.current => xxRef.value
         functionNode.reactivity?.ref?.forEach(name =>{
           const refReg = new RegExp(`${name}\.current`,'g');
           script = script.replace(refReg,  `${name}.value`);
         });
+
+        //reactive
+        functionNode.reactivity?.reactive?.forEach(([name,setterName]) =>{
+          if(!setterName?.length) {return;}
+          const refReg = new RegExp(`(${setterName})\(((.|\n)+?)\)`,'g');
+          // 替换setxx 转换位赋值 state.xxx = xxx
+          script = script.replace(refReg,  (match,p1,p2)=>{
+            return `state.${setterName.toLowerCase()}= ${p2}`;
+          });
+        });
       });
       template += functionNode.template;
     }
-  });
-
-  // 替换setxx 转换位赋值 state.xxx = xxx
-  script = script.replace(/set(.*?)\((.*?)\)/g,  (match,p1,p2)=>{
-    return `state.${p1.toString().toLowerCase()}= ${p2}`;
   });
 
   // vue 引入
