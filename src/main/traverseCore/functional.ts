@@ -42,21 +42,24 @@ export const genCallExpression = (
     return callExpression;
 };
 
-
-export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>{
-    // TODO
-    const funcCom = {
+export const genDefaultFnComObj = ()=>{
+    return Object.create({
         components: [],
         functional: true,
         isJsxFunction:false,
         scriptNode:[],
         template:'',
-        componentName: funcType === 'arrow' ? path.parentPath.node.id.name : path.node.id.name,
+        componentName: '',// 组件名称
         reactivity:{},
-    };
+    });
+};
+
+export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>{
+    // TODO
+    const funcCom = genDefaultFnComObj();
+    funcCom.componentName = funcType === 'arrow' ? path.parentPath.node.id.name : path.node.id.name;
 
     //参数
-    
     if(funcCom.componentName === root.exportName){
         let paramsPath = path.get('params.0');
         //处理参数
@@ -87,6 +90,22 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
                         returnPath.remove();
                         returnPath.skip();
                       } 
+                  }else if(t.isJSXReturnStatement(returnPath)){
+                    // 收集jsx 函数另外处理
+                    const parentPath = returnPath.findParent(p=>p.isVariableDeclaration() || p.isFunctionDeclaration());
+                    let compName = '';
+                    if(parentPath.isVariableDeclaration()){
+                        compName = get(parentPath.node,'declarations[0].id.name');
+                    }else{
+                        compName = get(parentPath.node,'id.name');
+                    }
+                    console.log('%c [ customer compName ]-103', 'font-size:13px; background:pink; color:#bf2c9f;', compName);
+                    const JSXFuncCom = genDefaultFnComObj();
+                    JSXFuncCom.componentName = compName;
+                    JSXFuncCom.scriptNode.push(parentPath.node);
+                    JSXFuncCom.isJsxFunction = true;
+                    root.customComponents[compName] = JSXFuncCom;
+                    parentPath.remove();
                   }
             },
             VariableDeclarator(varPath:t.NodePath<t.VariableDeclarator>){
@@ -143,7 +162,7 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
                     }else{
                         callPath.skip();
                     }
-                }
+                },
             });
 
             !useStateFlag && funcCom.scriptNode.push(scriptNodePath.node);

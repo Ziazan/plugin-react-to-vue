@@ -33,6 +33,19 @@ export const genReact2VueCode = async (sourceFile:string, targetFile:string) => 
   }
 };
 
+export const genReact2VueBySourceCode = async (sourceCode:string, targetFile:string) => {
+  try {
+    let reactAst = parseCodeAst(sourceCode);
+    const targetContent = generateR2SCode({
+      sourceAst: reactAst,
+      sourceCode: sourceCode,
+    },targetFile);
+     fs.writeFileSync(targetFile, targetContent);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 // FILE_LIST.forEach(async (name) => {
 //   const sourceFile = `./src/demo/${name}.tsx`;
 //   const targetFile = `./src/demo/${name}.vue`;

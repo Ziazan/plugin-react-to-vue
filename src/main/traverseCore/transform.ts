@@ -10,7 +10,7 @@ interface generateR2SCodeParams {
   sourceCode: string;
 }
 
-export function generateR2SCode({ sourceAst, sourceCode }: generateR2SCodeParams): string {
+export function generateR2SCode({ sourceAst, sourceCode }: generateR2SCodeParams,targetFile): string {
   // traverse module
   let result: ResultType = {
     import: [],
@@ -26,6 +26,8 @@ export function generateR2SCode({ sourceAst, sourceCode }: generateR2SCodeParams
     // there exists incompatibility
     caveats: [],
     source: sourceCode,
+    customComponents:{},
+    targetFile:targetFile,
   };
   const fileContent = sourceCode;
 

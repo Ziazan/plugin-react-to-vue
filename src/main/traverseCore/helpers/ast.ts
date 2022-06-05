@@ -197,6 +197,24 @@ const isThisSetSate = (node: t.Node) => {
   return result;
 }
 
+/**
+ * 是否是 jsx 函数的返回
+ * @param returnPath 
+ * @returns 
+ */
+const isJSXReturnStatement = (returnPath:NodePath<t.ReturnStatement>)=>{
+  let flag = false;
+  returnPath.traverse({
+    enter(path:NodePath<any>){
+      if(path.isJSXElement()){
+        flag = true;
+        path.stop();
+      }
+    }
+  });
+  return flag;
+};
+
 export * from '@babel/types';
 export {
   traverse,
@@ -218,4 +236,5 @@ export {
   isReactCircleFnInClass,
   isThisSetSate,
   isVariableFunc,
+  isJSXReturnStatement,
 };

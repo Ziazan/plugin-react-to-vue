@@ -15,4 +15,6 @@ export interface ResultType {
   vueImportSpecifiers: any[];
   caveats: any[];
   source: string;
+  targetFile:string;
+  customComponents?:{[key:string]:any};
 }

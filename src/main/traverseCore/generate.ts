@@ -1,9 +1,10 @@
 import prettier from 'prettier';
 import type { ResultType } from './types/index';
 import generator from '@babel/generator';
-
+import {genReact2VueBySourceCode} from './index';
 import { genVueTemplate } from './utils/template';
-import { genImportImportDeclaration,genImportSpecifier } from './utils';
+import { genImportImportDeclaration,genReactProgramScript,tools } from './utils';
+import * as fs from 'fs';
 
 
 export const generateVueComponent = (result: ResultType): string => {
@@ -31,13 +32,11 @@ export const generateVueComponent = (result: ResultType): string => {
 
   // functional
   // script 
-  console.log('%c  result.functional:', 'color: #0e93e0;background: #aaefe5;', result.functional?.length);
   result.functional?.forEach(functionNode=>{
     if(functionNode.isJsxFunction){
-      //TODO 创建新文件
+      console.log('%c [ isJsxFunction ]-37', 'font-size:13px; background:pink; color:#bf2c9f;', functionNode.isJsxFunction);
     }else{
       functionNode.scriptNode?.forEach((scriptNode)=>{
-        
         const strScriptNodeCode = generator(scriptNode).code + '\n';
         script += strScriptNodeCode;
         // 替换xxRef.current => xxRef.value
@@ -67,6 +66,26 @@ export const generateVueComponent = (result: ResultType): string => {
   // vue 引入
   const vueImport = genImportImportDeclaration(result.vueImportSpecifiers, 'vue');
   result.import.unshift(generator(vueImport).code);
+
+  // 自定义组件的引入
+  Object.keys(result.customComponents).forEach(componentName=>{
+    const comp = result.customComponents[componentName];
+   
+    // 生成组件文件
+    const reactProgramScript = genReactProgramScript({
+      functionScript:generator(comp.scriptNode[0]).code,
+      exportName:componentName,
+    });
+   
+    const dirPath = result.targetFile.split('/');
+    const fileName = dirPath.pop();
+    const compFileName = `${tools.toHorizontalLine(`${fileName.split('.')[0]}${componentName[0].toUpperCase()}${componentName.slice(1)}`)}`;
+     //TODO TEST
+    // fs.writeFileSync(`${dirPath.join('/')}/${compFileName}.tsx`, reactProgramScript);
+    genReact2VueBySourceCode(reactProgramScript,`${dirPath.join('/')}/${compFileName}.vue`);
+    const importScript = `import ${componentName} from './${compFileName}.vue;`;
+    result.import.push(importScript);
+  });
 
   const vueCode = genVueTemplate({
     template: template,
