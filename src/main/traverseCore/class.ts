@@ -301,6 +301,12 @@ export const traverseClass = (classPath: t.NodePath<t.ClassDeclaration>, fileCon
           break;
       }
     },
-    ClassProperty(path) {},
+    ClassProperty(path: t.NodePath<t.ClassProperty>) {
+      const propertyName = get(path.node,'key.name');
+      if(propertyName === 'render'){
+        console.log('%c [ propertyName ]-307', 'font-size:13px; background:pink; color:#bf2c9f;', propertyName);
+        parseRender(path, fileContent, resultClass,root);
+      }
+    },
   });
 };
