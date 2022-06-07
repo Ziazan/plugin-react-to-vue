@@ -6,6 +6,6 @@ extension "plugin-react-to-vue"
 
 right-click the file with the file suffix `.tsx` or `.jsx` and  select `react-to-vue` in the menu option. The following example:
 
-![demonstration animation](https://github.com/Ziazan/plugin-react-to-vue/blob/main/images/example.png)
+![demonstration animation](images/example.png)
 
 **Enjoy!**
