@@ -199,10 +199,10 @@ const isThisSetSate = (node: t.Node) => {
 
 /**
  * 是否是 jsx 函数的返回
- * @param returnPath 
+ * @param path 
  * @returns 
  */
-const isJSXReturnStatement = (returnPath:NodePath<t.ReturnStatement>)=>{
+const hasJSXReturnStatement = (returnPath:NodePath<any>)=>{
   let flag = false;
   returnPath.traverse({
     enter(path:NodePath<any>){
@@ -236,5 +236,5 @@ export {
   isReactCircleFnInClass,
   isThisSetSate,
   isVariableFunc,
-  isJSXReturnStatement,
+  hasJSXReturnStatement,
 };

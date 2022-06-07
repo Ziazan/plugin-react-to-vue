@@ -90,7 +90,7 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
                         returnPath.remove();
                         returnPath.skip();
                       } 
-                  }else if(t.isJSXReturnStatement(returnPath)){
+                  }else if(t.hasJSXReturnStatement(returnPath)){
                     // 收集jsx 函数另外处理
                     const parentPath = returnPath.findParent(p=>p.isVariableDeclaration() || p.isFunctionDeclaration());
                     let compName = '';
@@ -196,23 +196,32 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
         root.functional.push(funcCom);
     }else{
          //TODO 如果有jsx 就生成新文件
-        // else 原样保留 输出script
-        // if(true){
-        //     funcCom.isJsxFunction = true;
-        //     funcCom.scriptNode = []
-        //     root.functional.push(funcCom)
-        // }else{
-        // }
-        if(funcType === 'arrow'){
-            // 箭头函数的定义
-            const pPath = path.findParent((n)=>{
-                return n.isVariableDeclaration();
-            });
-            funcCom.scriptNode.push(pPath.node);
+        if(t.hasJSXReturnStatement(path)){
+            console.log('%c [ 如果有jsx 就生成新文件 ]-199', 'font-size:13px; background:pink; color:#bf2c9f;');
+            let compName = '';
+            let parentPath = path;
+            if(funcType === 'arrow'){
+                parentPath = path.findParent(p=>p.isVariableDeclaration());
+                compName = get(parentPath.node,'declarations[0].id.name');
+            }else{
+                compName = get(path.node,'id.name');
+            }
+            const JSXFuncCom = genDefaultFnComObj();
+            JSXFuncCom.componentName = compName;
+            JSXFuncCom.scriptNode.push(parentPath.node);
+            JSXFuncCom.isJsxFunction = true;
+            root.customComponents[compName] = JSXFuncCom;
         }else{
-            funcCom.scriptNode.push(path.node);
+            if(funcType === 'arrow'){
+                // 箭头函数的定义
+                const pPath = path.findParent((n)=>{
+                    return n.isVariableDeclaration();
+                });
+                funcCom.scriptNode.push(pPath.node);
+            }else{
+                funcCom.scriptNode.push(path.node);
+            }
+            root.functional.push(funcCom);
         }
-        root.functional.push(funcCom);
-       
     }
 };
