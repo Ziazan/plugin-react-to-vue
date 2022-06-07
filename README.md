@@ -2,8 +2,10 @@
 
 extension "plugin-react-to-vue"
 
-## 使用方式
+## How to use
 
-在`.tsx`,`.jsx` 右键菜单选择`react-to-vue`
+right-click the file with the file suffix `.tsx` or `.jsx` and  select `react-to-vue` in the menu option. The following example:
+
+![demonstration animation](https://github.com/Ziazan/plugin-react-to-vue/blob/main/images/example.png)
 
 **Enjoy!**
