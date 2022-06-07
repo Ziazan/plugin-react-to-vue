@@ -4,6 +4,8 @@ import * as t from './helpers/ast';
 import { traverseClass } from './class';
 import { traverseFunctional } from './functional';
 import { generateVueComponent } from './generate';
+import get from 'lodash/get';
+
 
 interface generateR2SCodeParams {
   sourceAst: any;
@@ -36,8 +38,14 @@ export function generateR2SCode({ sourceAst, sourceCode }: generateR2SCodeParams
       programBodyNodeList.forEach((childNode, index) => {
         let childPath = path.get(`body.${index}`) as t.NodePath<any>;
         if (t.isExportDefaultDeclaration(childNode)) {
-          // @ts-ignore
-          result.exportName = childNode.declaration.name ? childNode.declaration.name : childNode.declaration.id?.name;
+          if(t.isCallExpression(childNode.declaration)){
+            const argumentsName = get(childNode.declaration,'arguments[0].name');
+            result.exportName = argumentsName;
+          }else if(t.isIdentifier(childNode.declaration)){
+            result.exportName = childNode.declaration.name;
+          }else if(t.isFunctionDeclaration(childNode.declaration)){
+            result.exportName = childNode.declaration.id?.name;
+          }
         } else if (t.isVariableDeclaration(childNode) && !t.isVariableFunc(childPath)) {
           // 变量定义
           result.import.push(fileContent.slice(childNode.start, childNode.end));
