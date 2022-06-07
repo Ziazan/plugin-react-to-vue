@@ -33,7 +33,7 @@ const genReact2VueCode = async (sourceFile, targetFile) => {
     const targetContent = generateR2SCode({
       sourceAst: reactAst,
       sourceCode: sourceCode,
-    });
+    },targetFile);
     const data = await fs.writeFileSync(targetFile, targetContent);
     //文件写入成功。
   } catch (err) {

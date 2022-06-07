@@ -23,6 +23,20 @@ export const genVueTemplate = ({ template, importScript, script }) => {
   return vueCode;
 };
 
+/**
+ * 生成React组件代码
+ * @param param
+ * @returns 
+ */
+export const genReactProgramScript = ({ functionScript, exportName }:{functionScript:string,exportName:string}) => {
+  // root not allow template
+  const vueCode = `
+        ${functionScript}
+        export default ${exportName};
+    `;
+  return vueCode;
+};
+
 export const transformVueTemplate = ({
   node,
   withJSXVariableDeclarations,
@@ -163,33 +177,27 @@ export const transformVueTemplate = ({
     return node.value || '';
   } else if (t.isJSXExpressionContainer(node)) {
     // 函数表达式
-
     if (t.isCallExpression(node.expression) || t.isOptionalCallExpression(node.expression)) {
       // 变量或函数调用
       const callName = get(node.expression, 'callee.name');
       if (callName) {
-        // 直接调用函数或变量
-        let callComponentAst = null;
-        for (let functionDeclaration of withJSXFunctionDeclarations) {
-          if (get(functionDeclaration, 'id.name') === callName) {
-            callComponentAst = functionDeclaration;
-          }
-        }
+        // 函数调用转为组件
+        return `<${callName[0].toUpperCase()}${callName.slice(1)} />`;
 
-        for (let variableDeclaration of withJSXVariableDeclarations) {
-          for (let declaration of variableDeclaration.declarations) {
-            if (get(declaration, 'id.name') === callName) {
-              callComponentAst = declaration.init;
-            }
-          }
-        }
+        // for (let variableDeclaration of withJSXVariableDeclarations) {
+        //   for (let declaration of variableDeclaration.declarations) {
+        //     if (get(declaration, 'id.name') === callName) {
+        //       callComponentAst = declaration.init;
+        //     }
+        //   }
+        // }
 
-        return getComponentTemplate({
-          componentAst: callComponentAst,
-          withJSXVariableDeclarations,
-          withJSXFunctionDeclarations,
-          scriptAsts,
-        });
+        // return getComponentTemplate({
+        //   componentAst: callComponentAst,
+        //   withJSXVariableDeclarations,
+        //   withJSXFunctionDeclarations,
+        //   scriptAsts,
+        // });
       } else if (t.isMapCallExpression(node.expression)) {
         // map 函数
         const callback = node.expression.arguments[0];
@@ -232,26 +240,14 @@ export const transformVueTemplate = ({
       return str;
     }
     if (t.isLogicalExpression(node.expression)) {
-      if (get(node.expression, 'operator') === '&&') {
-        // 逻辑表达式 {isTrue && <></>}
-        // || 渲染 JSXElement 的情况应该不会出现
-        let str = `\n<template v-if="${generator(node.expression.left).code}">\n`;
-        let childrenJSXElement: any = node.expression.right;
-        if (t.isAllCallExpression(node.expression.right)) {
-          childrenJSXElement = t.jSXExpressionContainer(node.expression.right);
-        }
-        str += transformVueTemplate({
-          node: childrenJSXElement,
-          withJSXVariableDeclarations,
-          withJSXFunctionDeclarations,
-          scriptAsts,
-          blockInfo: {},
-        });
-        str += '\n</template>\n';
-        return str;
-      }
+      return transformVueTemplate({
+        node: node.expression,
+        withJSXVariableDeclarations,
+        withJSXFunctionDeclarations,
+        scriptAsts,
+        blockInfo: {},
+      });
     }
-
     if (t.hasJSX(node)) {
       return transformVueTemplate({
         node: node.expression,
@@ -321,6 +317,25 @@ export const transformVueTemplate = ({
         })
       )
       .join('');
+  } else if (t.isLogicalExpression(node)) {
+    if (get(node, 'operator') === '&&') {
+      // 逻辑表达式 {isTrue && <></>}
+      // || 渲染 JSXElement 的情况应该不会出现
+      let str = `\n<template v-if="${generator(node.left).code}">\n`;
+      let childrenJSXElement: any = node.right;
+      if (t.isAllCallExpression(node.right)) {
+        childrenJSXElement = t.jSXExpressionContainer(node.right);
+      }
+      str += transformVueTemplate({
+        node: childrenJSXElement,
+        withJSXVariableDeclarations,
+        withJSXFunctionDeclarations,
+        scriptAsts,
+        blockInfo: {},
+      });
+      str += '\n</template>\n';
+      return str;
+    }
   }
   return '';
 };
@@ -359,7 +374,6 @@ export const getComponentTemplate = ({
     }
     return '';
   } else if (componentAst) {
-    // console.log('%c  [ componentAst ]-37:', 'color: #0e93e0;background: #aaefe5;', generator(componentAst).code);
     // 要判断一下是不是函数
     let { body, params } = componentAst as any;
     const param = params ? params[0] : null;
@@ -426,9 +440,10 @@ export const getComponentTemplate = ({
       console.log('if判断');
       return '';
     }else{
+      console.log('%c [ default ]-439', 'font-size:13px; background:pink; color:#bf2c9f;');
       return '';
     }
   }
-  
+  console.log('%c [ default ]-440', 'font-size:13px; background:pink; color:#bf2c9f;');
   return '';
 };
