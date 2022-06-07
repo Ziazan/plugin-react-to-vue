@@ -200,7 +200,7 @@ export const transformVueTemplate = ({
         const keyName = callbackParamsNames?.length === 2 ? callbackParamsNames[1] : '';
         let str = `\n<template v-for="(${callbackParamsNames.join(', ')}) in ${
           generator(calleeNode).code
-        }">\n`;
+        }" :key="${keyName}">\n`;
         str += `${getComponentTemplate({
           componentAst: callback,
           withJSXVariableDeclarations,
