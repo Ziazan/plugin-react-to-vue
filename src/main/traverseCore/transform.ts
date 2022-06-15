@@ -54,19 +54,17 @@ export function generateR2SCode({ sourceAst, sourceCode }: generateR2SCodeParams
         } else if (t.isVariableDeclaration(childNode) && !t.isVariableFunc(childPath)) {
           // 变量定义
           // TODO 追加到其他 
-          result.import.push(fileContent.slice(childNode.start, childNode.end));
+          result.script.push(fileContent.slice(childNode.start, childNode.end));
         }else if (t.isExportNamedDeclaration(childNode)){
           console.log('isExportNamedDeclaration: ');
           const declarationNode = childNode.declaration;
           const importScript = result.import.join('\n');
           const variableDeclaration = generator(declarationNode).code;
-          let componentName = 'a';
+          let componentName = 'default';
           if(t.isVariableDeclaration(declarationNode)){
             componentName = get(declarationNode,'declarations[0].id.name');
-            console.log('componentName: ', componentName);
           }else if(t.isFunctionDeclaration(declarationNode)){
             componentName = get(declarationNode,'id.name');
-            console.log('componentName: ', componentName);
           }
           const reactProgramScript = genReactProgramScript({
             functionScript:`${importScript}\n${variableDeclaration}`,

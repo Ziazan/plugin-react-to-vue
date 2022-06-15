@@ -11,6 +11,10 @@ export const generateVueComponent = (result: ResultType): string => {
   let script = '';
   let template = '';
 
+  if(result.script){
+    script += result.script.join('\n');
+  }
+
   // class
   if(Object.keys(result.class)?.length){
     // constructor
