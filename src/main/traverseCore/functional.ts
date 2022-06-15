@@ -190,6 +190,7 @@ export const traverseFunctional = (path, fileContent, root,funcType ='normal')=>
                     scriptAsts: funcCom.scriptNode,
                     withJSXVariableDeclarations: [],
                     withJSXFunctionDeclarations: [],
+                    root,
                   });
             });
         }

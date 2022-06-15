@@ -5,6 +5,7 @@ import isHtmlTag from './../helpers/is-html-tag';
 import get from 'lodash/get';
 import set from 'lodash/set';
 import { tools } from './index';
+import { ResultType } from '../types';
 
 export const genVueTemplate = ({ template, importScript, script }) => {
   // root not allow template
@@ -48,7 +49,7 @@ export const transformVueTemplate = ({
   withJSXVariableDeclarations: any[];
   withJSXFunctionDeclarations: any[];
   scriptAsts: t.Node[];
-  blockInfo: any;
+  blockInfo: ResultType;
 }): string => {
   if (t.isJSXElement(node)) {
     let tagNameNode = get(node, 'openingElement.name');
@@ -168,7 +169,7 @@ export const transformVueTemplate = ({
             withJSXVariableDeclarations,
             withJSXFunctionDeclarations,
             scriptAsts,
-            blockInfo: {},
+            blockInfo,
           })
         )
         .join('');
@@ -185,7 +186,9 @@ export const transformVueTemplate = ({
     if (t.isCallExpression(node.expression) || t.isOptionalCallExpression(node.expression)) {
       // 变量或函数调用
       const callName = get(node.expression, 'callee.name');
-      if (callName) {
+      // TODO 需要判断是否在组件函数中
+      if (Object.keys(blockInfo.customComponents).includes(callName)) {
+        console.log('customComponents', Object.keys(blockInfo.customComponents));
         // 函数调用转为组件
         return `<${callName[0].toUpperCase()}${callName.slice(1)} />`;
 
@@ -219,6 +222,7 @@ export const transformVueTemplate = ({
           withJSXVariableDeclarations,
           withJSXFunctionDeclarations,
           scriptAsts,
+          root:blockInfo,
         })}`;
         str += '\n</template>\n';
         return str;
@@ -250,7 +254,7 @@ export const transformVueTemplate = ({
         withJSXVariableDeclarations,
         withJSXFunctionDeclarations,
         scriptAsts,
-        blockInfo: {},
+        blockInfo,
       });
     }
     if (t.hasJSX(node)) {
@@ -259,7 +263,7 @@ export const transformVueTemplate = ({
         withJSXVariableDeclarations,
         withJSXFunctionDeclarations,
         scriptAsts,
-        blockInfo: {},
+        blockInfo,
       });
     }
     // react 中的注释
@@ -294,7 +298,7 @@ export const transformVueTemplate = ({
       withJSXVariableDeclarations,
       withJSXFunctionDeclarations,
       scriptAsts,
-      blockInfo: {},
+      blockInfo,
     });
     str += '\n</template>';
     if (node.alternate) {
@@ -304,7 +308,7 @@ export const transformVueTemplate = ({
         withJSXVariableDeclarations,
         withJSXFunctionDeclarations,
         scriptAsts,
-        blockInfo: {},
+        blockInfo,
       });
       str += '\n</template>\n';
     }
@@ -318,7 +322,7 @@ export const transformVueTemplate = ({
           withJSXVariableDeclarations,
           withJSXFunctionDeclarations,
           scriptAsts,
-          blockInfo: {},
+          blockInfo,
         })
       )
       .join('');
@@ -336,7 +340,7 @@ export const transformVueTemplate = ({
         withJSXVariableDeclarations,
         withJSXFunctionDeclarations,
         scriptAsts,
-        blockInfo: {},
+        blockInfo,
       });
       str += '\n</template>\n';
       return str;
@@ -350,19 +354,22 @@ export const getComponentTemplate = ({
   scriptAsts,
   withJSXVariableDeclarations,
   withJSXFunctionDeclarations,
+  root
 }: {
   componentAst: t.Node;
   scriptAsts: any[];
   withJSXVariableDeclarations: any[];
   withJSXFunctionDeclarations: any[];
+  root:ResultType;
 }): string => {
+  const blockInfo = {...root};
   if (t.isJSXElement(componentAst)) {
     return transformVueTemplate({
       node: componentAst,
       withJSXVariableDeclarations,
       withJSXFunctionDeclarations,
       scriptAsts,
-      blockInfo: {},
+      blockInfo,
     });
   } else if (t.isReturnStatement(componentAst)) {
     // console.log('%c  [ componentAst ]-36:', 'color: #0e93e0;background: #aaefe5;', generator(componentAst).code);
@@ -374,7 +381,7 @@ export const getComponentTemplate = ({
         withJSXVariableDeclarations,
         withJSXFunctionDeclarations,
         scriptAsts,
-        blockInfo: {},
+        blockInfo,
       });
     }
     return '';
@@ -398,7 +405,7 @@ export const getComponentTemplate = ({
             withJSXVariableDeclarations,
             withJSXFunctionDeclarations,
             scriptAsts,
-            blockInfo: {},
+            blockInfo,
           });
         } else if (t.isIfStatement(bodyStatementAst)) {
           let finalALternate = null;
@@ -426,7 +433,7 @@ export const getComponentTemplate = ({
             withJSXVariableDeclarations,
             withJSXFunctionDeclarations,
             scriptAsts,
-            blockInfo: {},
+            blockInfo,
           });
         }
       }
@@ -438,7 +445,7 @@ export const getComponentTemplate = ({
         withJSXVariableDeclarations,
         withJSXFunctionDeclarations,
         scriptAsts,
-        blockInfo: {},
+        blockInfo,
       });
     }else if (t.isIfStatement(componentAst)) {
       //TODO 需要处理if判断的多个return

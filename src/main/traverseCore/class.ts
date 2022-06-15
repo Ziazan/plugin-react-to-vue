@@ -195,6 +195,7 @@ function parseRender(path, fileContent, resultClass,root) {
       scriptAsts: root.script,
       withJSXVariableDeclarations: [],
       withJSXFunctionDeclarations: [],
+      root,
     });
     // 处理script代码
     jsxPath.parentPath.getAllPrevSiblings().forEach((scriptNodePath)=>{
