@@ -24,7 +24,8 @@ const FILE_LIST = [
   // 'setState',
   // 'renderJsx',
   // 'exportWrap',
-  'fragment',
+  // 'fragment',
+  'exportNamedDeclaration',
 ];
 
 const genReact2VueCode = async (sourceFile, targetFile) => {
@@ -44,7 +45,7 @@ const genReact2VueCode = async (sourceFile, targetFile) => {
 
 FILE_LIST.forEach(async (name) => {
   const sourceFile = `./src/test/demo/${name}.tsx`;
-  const targetFile = `./src/test/demo/${name}_3.vue`;
+  const targetFile = `./src/test/demo/${name}.vue`;
   console.log(`========== 转换 ${sourceFile} START ==========`);
   await genReact2VueCode(sourceFile, targetFile);
   console.log(`========== 导出文件 ${name} END ==========`);

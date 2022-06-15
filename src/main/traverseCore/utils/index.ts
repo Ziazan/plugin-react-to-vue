@@ -35,8 +35,6 @@ export function getFunctionBody(node, removeBrace = true) {
  * @returns
  */
 export const genImportSpecifier = (localName: string, importedName?: string) => {
-  console.log('%c  importedName:', 'color: #0e93e0;background: #aaefe5;', importedName);
-  console.log('%c  localName:', 'color: #0e93e0;background: #aaefe5;', localName);
   const imported = t.identifier(importedName || localName);
   const local = t.identifier(localName);
   return t.importSpecifier(local, imported);

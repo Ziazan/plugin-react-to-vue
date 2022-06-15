@@ -5,6 +5,9 @@ import { traverseClass } from './class';
 import { traverseFunctional } from './functional';
 import { generateVueComponent } from './generate';
 import get from 'lodash/get';
+import {genReactProgramScript,tools} from './utils';
+import {genReact2VueBySourceCode} from './index';
+
 
 
 interface generateR2SCodeParams {
@@ -50,7 +53,30 @@ export function generateR2SCode({ sourceAst, sourceCode }: generateR2SCodeParams
           }
         } else if (t.isVariableDeclaration(childNode) && !t.isVariableFunc(childPath)) {
           // 变量定义
+          // TODO 追加到其他 
           result.import.push(fileContent.slice(childNode.start, childNode.end));
+        }else if (t.isExportNamedDeclaration(childNode)){
+          console.log('isExportNamedDeclaration: ');
+          const declarationNode = childNode.declaration;
+          const importScript = result.import.join('\n');
+          const variableDeclaration = generator(declarationNode).code;
+          let componentName = 'a';
+          if(t.isVariableDeclaration(declarationNode)){
+            componentName = get(declarationNode,'declarations[0].id.name');
+            console.log('componentName: ', componentName);
+          }else if(t.isFunctionDeclaration(declarationNode)){
+            componentName = get(declarationNode,'id.name');
+            console.log('componentName: ', componentName);
+          }
+          const reactProgramScript = genReactProgramScript({
+            functionScript:`${importScript}\n${variableDeclaration}`,
+            exportName:componentName,
+          });
+          const dirPath = result.targetFile.split('/');
+          const fileName = dirPath.pop();
+          const compFileName = `${tools.toHorizontalLine(`${fileName.split('.')[0]}${componentName[0].toUpperCase()}${componentName.slice(1)}`)}`;
+          console.log('compFileName: ', compFileName);
+          genReact2VueBySourceCode(reactProgramScript,`${dirPath.join('/')}/${compFileName}.vue`);
         }
       });
     },
