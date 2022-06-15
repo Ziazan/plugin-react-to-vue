@@ -51,8 +51,13 @@ export const transformVueTemplate = ({
   blockInfo: any;
 }): string => {
   if (t.isJSXElement(node)) {
-    let str = '<';
-    let tagName = get(node, 'openingElement.name.name');
+    let tagNameNode = get(node, 'openingElement.name');
+    let tagName = tagNameNode?.name || generator(tagNameNode).code;
+    if(['React.Fragment','Fragment'].includes(tagName)){
+      tagName = '';
+    }
+    let str = tagName?'<' : '';
+
 
     // if (!isHtmlTag(tagName)) {
     //   //TODO 自定义标签待实现
@@ -155,7 +160,7 @@ export const transformVueTemplate = ({
 
     // 闭合标签
     if (node.closingElement) {
-      str += '>';
+      str += tagName?'>':'';
       str += node.children
         .map((el) =>
           transformVueTemplate({
@@ -167,9 +172,9 @@ export const transformVueTemplate = ({
           })
         )
         .join('');
-      str += `</${get(node, 'openingElement.name.name')}>`;
+      str += tagName?`</${tagName}>`:'';
     } else {
-      str += '/>';
+      str += tagName?'/>':'';
     }
     return str;
   } else if (t.isJSXText(node)) {

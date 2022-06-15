@@ -23,7 +23,8 @@ const FILE_LIST = [
   // 'useRef',
   // 'setState',
   // 'renderJsx',
-  'exportWrap'
+  // 'exportWrap',
+  'fragment',
 ];
 
 const genReact2VueCode = async (sourceFile, targetFile) => {
